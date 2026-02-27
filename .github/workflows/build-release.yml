@@ -46,7 +46,7 @@ jobs:
           cd workdir/output
           latest_wsl=$(ls parchlinux-*.wsl | tail -1)
           cp "$latest_wsl" parchlinux-wsl-latest.wsl
-          cp "${latest_wsl%.wsl}.SHA256" parchlinux-wsl-latest.wsl.SHA256
+          cp "${latest_wsl}.SHA256" parchlinux-wsl-latest.wsl.SHA256
 
       - name: Remove last WSL image from host
         run: |
