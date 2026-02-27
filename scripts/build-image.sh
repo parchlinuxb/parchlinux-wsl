@@ -11,7 +11,7 @@ declare -r PACKAGES="${3:-vim git curl wget fzf man-db man-pages texinfo sudo zs
 mkdir -vp "$BUILDDIR/alpm-hooks/usr/share/libalpm/hooks"
 find /usr/share/libalpm/hooks -exec ln -sf /dev/null "$BUILDDIR/alpm-hooks"{} \;
 
-mkdir -vp "$BUILDDIR/var/lib/pacman/" "$OUTPUTDIR"
+mkdir -vp "$BUILDDIR/var/lib/pacman/" "$OUTPUTDIR" "$BUILDDIR/etc"
 cp rootfs/etc/pacman.conf "$BUILDDIR/etc/pacman.conf"
 
 sed 's/Include = /&rootfs/g' < "$BUILDDIR/etc/pacman.conf" > "$WORKDIR/pacman.conf"
