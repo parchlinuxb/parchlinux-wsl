@@ -1,0 +1,26 @@
+#!/bin/bash
+
+echo "USB devices (requires USBIPD-Win on Windows):"
+echo ""
+
+if [ -d /sys/bus/usb/devices ]; then
+    for dev in /sys/bus/usb/devices/*; do
+        if [ -f "$dev/idVendor" ] && [ -f "$dev/idProduct" ]; then
+            vendor=$(cat "$dev/idVendor" 2>/dev/null)
+            product=$(cat "$dev/idProduct" 2>/dev/null)
+            product_name=$(cat "$dev/product" 2>/dev/null || echo "Unknown")
+            
+            if [ -n "$vendor" ] && [ -n "$product" ]; then
+                echo "Vendor: $vendor Product: $product - $product_name"
+            fi
+        fi
+    done
+else
+    echo "USB subsystem not available"
+fi
+
+echo ""
+echo "To attach a USB device:"
+echo "  1. On Windows, run: usbipd list"
+echo "  2. Then: usbipd attach --busid <busid>"
+echo "  3. Device will appear as /dev/sd*"

@@ -6,6 +6,7 @@ declare -r WORKDIR="$1"
 declare -r BUILDDIR="$WORKDIR/build"
 declare -r OUTPUTDIR="$WORKDIR/output"
 declare -r IMAGE_VERSION="$2"
+declare -r PACKAGES="${3:-vim git curl wget fzf man-db man-pages texinfo sudo zsh micro nano}"
 
 mkdir -vp "$BUILDDIR/alpm-hooks/usr/share/libalpm/hooks"
 find /usr/share/libalpm/hooks -exec ln -sf /dev/null "$BUILDDIR/alpm-hooks"{} \;
@@ -23,7 +24,7 @@ fakechroot -- fakeroot -- \
         --noconfirm --dbpath "$BUILDDIR/var/lib/pacman" \
         --config "$WORKDIR/pacman.conf" \
         --noscriptlet \
-        --hookdir "$BUILDDIR/alpm-hooks/usr/share/libalpm/hooks/" base
+        --hookdir "$BUILDDIR/alpm-hooks/usr/share/libalpm/hooks/" base $PACKAGES
 
 fakechroot -- fakeroot -- chroot "$BUILDDIR" update-ca-trust
 fakechroot -- fakeroot -- chroot "$BUILDDIR" pacman-key --init

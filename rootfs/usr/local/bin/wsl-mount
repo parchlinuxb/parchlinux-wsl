@@ -1,0 +1,29 @@
+#!/bin/bash
+
+if [ -z "$1" ]; then
+    echo "Usage: wsl-mount <drive> [mountpoint]"
+    echo "Example: wsl-mount d /mnt/d"
+    echo ""
+    echo "Available Windows drives:"
+    ls -la /mnt/ 2>/dev/null || echo "  No drives mounted"
+    exit 1
+fi
+
+DRIVE="$1"
+MOUNTPOINT="${2:-/mnt/${DRIVE,,}}"
+
+if [ ! -b "/dev/sd${DRIVE}" ]; then
+    if [ ! -d "$MOUNTPOINT" ]; then
+        sudo mkdir -p "$MOUNTPOINT"
+    fi
+    sudo mount -t drvfs "${DRIVE}:" "$MOUNTPOINT"
+    echo "Mounted ${DRIVE}: at $MOUNTPOINT"
+else
+    echo "USB/physical drive detected at /dev/sd${DRIVE}"
+    echo "Mounting as block device..."
+    if [ ! -d "$MOUNTPOINT" ]; then
+        sudo mkdir -p "$MOUNTPOINT"
+    fi
+    sudo mount "/dev/sd${DRIVE}" "$MOUNTPOINT"
+    echo "Mounted /dev/sd${DRIVE} at $MOUNTPOINT"
+fi

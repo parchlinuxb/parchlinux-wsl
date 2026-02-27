@@ -1,0 +1,14 @@
+#!/bin/bash
+
+echo "Available drives:"
+echo ""
+
+lsblk -o NAME,SIZE,TYPE,MOUNTPOINT | grep -v "loop"
+
+echo ""
+echo "Windows drives (mounted at /mnt):"
+ls -la /mnt/ 2>/dev/null || echo "No /mnt directory"
+
+echo ""
+echo "To mount a Windows drive:"
+echo "  sudo mount -t drvfs D: /mnt/d"

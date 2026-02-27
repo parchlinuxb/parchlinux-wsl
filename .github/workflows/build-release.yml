@@ -1,0 +1,80 @@
+name: Build and Release of ParchLinux WSL Image
+
+on:
+  release:
+    types: [published]
+
+env:
+  HOST: mirror.parchlinux.ir
+  RSYNC_PATH: /srv/http/wsl/
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:base-devel
+      options: --privileged
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          echo "Updating system packages..."
+          pacman -Syu --noconfirm || { echo 'pacman update failed!'; exit 1; }
+          echo "Installing necessary packages..."
+          pacman -S --noconfirm \
+            make \
+            devtools \
+            fakechroot \
+            fakeroot \
+            git \
+            python \
+            curl \
+            base-devel \
+            sshpass \
+            rsync || { echo 'pacman install failed!'; exit 1; }
+
+      - name: Build ParchLinux WSL image
+        run: |
+          echo "Building the ParchLinux WSL image..."
+          make build || { echo 'Make build failed!'; exit 1; }
+
+      - name: Rename to latest
+        run: |
+          cd workdir/output
+          latest_wsl=$(ls parchlinux-*.wsl | tail -1)
+          cp "$latest_wsl" parchlinux-wsl-latest.wsl
+          cp "${latest_wsl%.wsl}.SHA256" parchlinux-wsl-latest.wsl.SHA256
+
+      - name: Remove last WSL image from host
+        run: |
+          sshpass -p "${{ secrets.SSH_PASS }}" ssh -o StrictHostKeyChecking=no parch@$HOST rm -rf $RSYNC_PATH
+
+      - name: Create WSL directory on host
+        run: |
+          sshpass -p "${{ secrets.SSH_PASS }}" ssh -o StrictHostKeyChecking=no parch@$HOST mkdir -p $RSYNC_PATH
+
+      - name: Upload WSL image to host
+        run: |
+          sshpass -p "${{ secrets.SSH_PASS }}" rsync -avz workdir/output/parchlinux-wsl-latest.wsl parch@$HOST:$RSYNC_PATH
+          sshpass -p "${{ secrets.SSH_PASS }}" rsync -avz workdir/output/parchlinux-wsl-latest.wsl.SHA256 parch@$HOST:$RSYNC_PATH
+
+      - name: Upload release artifact to GitHub
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "Preparing to upload the artifact..."
+          
+          ASSET=$(find workdir/output -type f -name "*.wsl" | sort | tail -n 1)
+          
+          if [ -z "$ASSET" ]; then
+            echo "Error: No artifact found in the output directory!"
+            exit 1
+          fi
+
+          TAG=$(basename ${{ github.ref }})
+          
+          echo "Uploading asset to GitHub release..."
+          gh release upload $TAG $ASSET --repo ${{ github.repository }}
